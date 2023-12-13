@@ -8,17 +8,17 @@
 #ifndef MAINPP_H_
 #define MAINPP_H_
 
-#include <geometry_msgs/Twist.h>
-#include <krabi_msgs/motors.h>
-#include <krabi_msgs/odom_light.h>
-#include <krabi_msgs/odom_lighter.h>
-#include <krabi_msgs/motors_parameters.h>
-#include <std_msgs/Bool.h>
-#include <ros.h>
-#include <std_msgs/String.h>
-#include <nav_msgs/Odometry.h>
-#include <krabi_msgs/motors_cmd.h>
-#include <krabi_msgs/SetOdom.h>
+#include <std_msgs/msg/bool.h>
+#include <geometry_msgs/msg/twist.h>
+#include <krabi_msgs/msg/motors.h>
+#include <krabi_msgs/msg/odom_light.h>
+#include <krabi_msgs/msg/odom_lighter.h>
+#include <krabi_msgs/msg/motors_parameters.h>
+//#include <ros.h>
+#include <std_msgs/msg/string.h>
+#include <nav_msgs/msg/odometry.h>
+#include <krabi_msgs/msg/motors_cmd.h>
+#include <krabi_msgs/srv/set_odom.h>
 #include <MCP3002.h>
 #include "stm32f3xx_hal.h"
 #include "DCMotor.h"
@@ -26,11 +26,11 @@
 #define UPDATE_FREQ 10
 #define MS_BETWEEN_UPDATES 1000/UPDATE_FREQ
 
-krabi_msgs::encoders encoders_msg;
-krabi_msgs::motors motors_msg;
-krabi_msgs::motors_parameters asserv_msg;
-krabi_msgs::odom_light odom_light_msg;
-krabi_msgs::odom_lighter odom_lighter_msg;
+krabi_msgs__msg__Encoders encoders_msg;
+krabi_msgs__msg__Motors motors_msg;
+krabi_msgs__msg__MotorsParameters asserv_msg;
+krabi_msgs__msg__OdomLight odom_light_msg;
+krabi_msgs__msg__OdomLighter odom_lighter_msg;
 ros::Publisher encoders_pub("encoders", &encoders_msg);
 ros::Publisher motors_pub("motors", &motors_msg);
 ros::Publisher odom_light_pub("odom_light", &odom_light_msg);
