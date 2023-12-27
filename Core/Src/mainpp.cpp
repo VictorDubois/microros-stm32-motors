@@ -6,16 +6,18 @@
  */
 #include <mainpp.h>
 #include <constants.h>
+#include <math.h>
 extern "C" {
 	#include "main.h"
 }
-#include <tf/tf.h>
-ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
-ros::Subscriber<krabi_msgs::motors_parameters> parameters_sub("motors_parameters", parameters_cb);
-ros::Subscriber<std_msgs::Bool> enable_sub("enable_motor", enable_motor_cb);
-ros::Subscriber<krabi_msgs::motors_cmd> motors_cmd_sub("motors_cmd", motors_cmd_cb);
+//#include <tf/tf.h>
 
-void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
+/*ros::Subscriber<geometry_msgs__msg__Twist> twist_sub("cmd_vel", cmd_vel_cb);
+ros::Subscriber<krabi_msgs__msg__MotorsParameters> parameters_sub("motors_parameters", parameters_cb);
+ros::Subscriber<std_msgs__msg__Bool> enable_sub("enable_motor", enable_motor_cb);
+ros::Subscriber<krabi_msgs__msg__MotorsCmd> motors_cmd_sub("motors_cmd", motors_cmd_cb);*/
+
+void motors_cmd_cb(const krabi_msgs__msg__MotorsCmd &motors_cmd_msg)
 {
 	if (motors_cmd_msg.reset_encoders)
 	{
@@ -29,9 +31,9 @@ void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
 		return;
 	}
 
-	if (motors_cmd_msg.override_PWM)
+	if (motors_cmd_msg.override_pwm)
 	{
-		MotorBoard::getDCMotor().override_PWM(motors_cmd_msg.PWM_override_left, motors_cmd_msg.PWM_override_right);
+		MotorBoard::getDCMotor().override_PWM(motors_cmd_msg.pwm_override_left, motors_cmd_msg.pwm_override_right);
 	}
 	else
 	{
@@ -39,41 +41,41 @@ void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
 	}
 }
 
-void set_odom_alone_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
+void set_odom_alone_cb(const krabi_msgs__srv__SetOdom_Request &req, krabi_msgs__srv__SetOdom_Response &res)
 {
 	MotorBoard::set_odom(req.x, req.y, req.theta);
 	res.success = true;
 }
 
-ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_alone_cb);
+//ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_alone_cb);
 
-void parameters_cb(const krabi_msgs::motors_parameters& a_parameters)
+void parameters_cb(const krabi_msgs__msg__MotorsParameters& a_parameters)
 {
 	MotorBoard::getDCMotor().set_max_current(a_parameters.max_current);
 	MotorBoard::getDCMotor().set_max_current(a_parameters.max_current_left, a_parameters.max_current_right);
 }
 
-void cmd_vel_cb(const geometry_msgs::Twist& twist)
+void cmd_vel_cb(const geometry_msgs__msg__Twist& twist)
 {
 	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, -twist.angular.z);
-	asserv_msg.max_current_left = twist.linear.x;
+	//asserv_msg.max_current_left = twist.linear.x;
 
 }
 
-void enable_motor_cb(const std_msgs::Bool& enable)
+void enable_motor_cb(const std_msgs__msg__Bool& enable)
 {
 	if(!enable.data) {
 		MotorBoard::getDCMotor().resetMotors();
 	}
 }
-
+/*
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 	MotorBoard::getNodeHandle().getHardware()->flush();
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
-}
+}*/
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 	if (htim->Instance == TIM15) {
@@ -84,7 +86,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 	}
 }
 
-ros::NodeHandle MotorBoard::nh;
+//ros::NodeHandle MotorBoard::nh;
+// @todo comprendre pourquoi c'est un conflit?
 DCMotorHardware MotorBoard::motorsHardware;
 DCMotor MotorBoard::motors;
 MCP3002 MotorBoard::currentReader;
@@ -105,7 +108,8 @@ void MotorBoard::set_odom(float a_x, float a_y, float a_theta)
 	theta_offset = a_theta - current_theta;
 }
 
-MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
+MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler)//:Node("STM32")
+{
 
 	while(false)
 	{
@@ -125,7 +129,96 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 
 	set_odom(0, 0, 0);
 
-	nh.initNode();
+
+
+
+    allocator = rcl_get_default_allocator();
+
+    //create init_options
+    rclc_support_init(&support, 0, NULL, &allocator);
+
+    // create node
+    rclc_node_init_default(&node, "cubemx_node", "", &support);
+
+
+	rclc_publisher_init_default(
+		&encoders_pub,
+		&node,
+		ROSIDL_GET_MSG_TYPE_SUPPORT(krabi_msgs, msg, Encoders),
+		"encoders");
+	rclc_publisher_init_default(
+			&motors_pub,
+			&node,
+			ROSIDL_GET_MSG_TYPE_SUPPORT(krabi_msgs, msg, Motors),
+			"motors");
+	rclc_publisher_init_default(
+			&odom_light_pub,
+			&node,
+			ROSIDL_GET_MSG_TYPE_SUPPORT(krabi_msgs, msg, OdomLight),
+			"odom_light");
+	rclc_publisher_init_default(
+			&odom_lighter_pub,
+			&node,
+			ROSIDL_GET_MSG_TYPE_SUPPORT(krabi_msgs, msg, OdomLighter),
+			"odom_lighter");
+	rclc_publisher_init_default(
+				&asserv_pub,
+				&node,
+				ROSIDL_GET_MSG_TYPE_SUPPORT(krabi_msgs, msg, MotorsParameters),
+				"asserv");
+
+	rcl_ret_t rc;
+	rcl_subscription_t twist_sub;
+	rcl_subscription_t parameters_sub;
+	rcl_subscription_t enable_sub;
+	rcl_subscription_t motors_cmd_sub;
+
+	rc = rclc_subscription_init_default(
+	  &twist_sub, &node,
+	  ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), "cmd_vel");
+	rc = rclc_subscription_init_default(
+		  &parameters_sub, &node,
+		  ROSIDL_GET_MSG_TYPE_SUPPORT(krabi_msgs, msg, MotorsParameters), "motors_parameters");
+	rc = rclc_subscription_init_default(
+		  &enable_sub, &node,
+		  ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool), "enable_motor");
+	rc = rclc_subscription_init_default(
+		  &motors_cmd_sub, &node,
+		  ROSIDL_GET_MSG_TYPE_SUPPORT(krabi_msgs, msg, MotorsCmd), "motors_cmd");
+
+
+	// Callbacks
+	geometry_msgs__msg__Twist twist_msg;
+	krabi_msgs__msg__MotorsParameters motors_parameters_msg;
+	std_msgs__msg__Bool enable_msg;
+	krabi_msgs__msg__MotorsCmd motors_cmd_msg;
+
+	rc = rclc_executor_add_subscription(
+	  &executor, &twist_sub, &twist_msg,
+	  &cmd_vel_cb, ON_NEW_DATA);
+	rc = rclc_executor_add_subscription(
+		  &executor, &parameters_sub, &motors_parameters_msg,
+		  &parameters_cb, ON_NEW_DATA);
+	rc = rclc_executor_add_subscription(
+		  &executor, &enable_sub, &enable_msg,
+		  &enable_motor_cb, ON_NEW_DATA);
+	rc = rclc_executor_add_subscription(
+		  &executor, &motors_cmd_sub, &motors_cmd_msg,
+		  &motors_cmd_cb, ON_NEW_DATA);
+
+
+	// Services
+	rcl_service_t set_odom_srv;
+	rc = rclc_service_init_default(
+	  &set_odom_srv, &node,
+	  ROSIDL_GET_SRV_TYPE_SUPPORT(krabi_msgs, srv, SetOdom), "set_odom");
+
+	/*ros::Subscriber<geometry_msgs__msg__Twist> twist_sub("cmd_vel", cmd_vel_cb);
+	ros::Subscriber<krabi_msgs__msg__MotorsParameters> parameters_sub("motors_parameters", parameters_cb);
+	ros::Subscriber<std_msgs__msg__Bool> enable_sub("enable_motor", enable_motor_cb);
+	ros::Subscriber<krabi_msgs__msg__MotorsCmd> motors_cmd_sub("motors_cmd", motors_cmd_cb);*/
+
+	/*nh.initNode();
 	HAL_Delay(100);
 
 	//nh.advertise(odom_pub);
@@ -139,9 +232,13 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	nh.subscribe(enable_sub);
 	nh.subscribe(motors_cmd_sub);
 
-	nh.advertiseService(set_odom_srv);
+	nh.advertiseService(set_odom_srv);*/
 
 	HAL_Delay(100);
+
+
+	// Check connection before continuing
+	/*
 	uint8_t reinit = 1;
 	while (!nh.connected())
 	{
@@ -151,16 +248,17 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 			reinit++;
 		}
 	    HAL_Delay(MS_BETWEEN_UPDATES);
-	}
+	}*/
 
 
 }
-MotorBoard::MotorBoard() {}
+MotorBoard::MotorBoard()// : Node("toto")
+{}
 MotorBoard::~MotorBoard() {}
 
-ros::NodeHandle& MotorBoard::getNodeHandle(void) {
-	return nh;
-}
+/*rcl_node_t& MotorBoard::getNodeHandle(void) {
+	return node;
+}*/
 
 DCMotor& MotorBoard::getDCMotor(void) {
 	return motors;
@@ -261,22 +359,37 @@ float MotorBoard::compute_linear_dist(const long encoder1, const long encoder2)
 }
 
 void MotorBoard::update_inputs() {
-	nh.spinOnce();
+	//nh.spinOnce();
+	rclc_executor_spin(&executor);
+}
+
+geometry_msgs__msg__Quaternion createQuaternionMsgFromYaw(double yaw)
+{
+  geometry_msgs__msg__Quaternion q;
+  q.x = 0;
+  q.y = 0;
+  q.z = sin(0.5 * yaw);
+  q.w = cos(0.5 * yaw);
+  return q;
 }
 
 void MotorBoard::update() {
-	if (!nh.connected()){
+	// Todo check if connected
+	/*if (!node.connected()){
 		return;
-	}
+	}*/
+
+	rcl_ret_t ret;
+
 
 	int16_t encoder_left = motors.get_encoder_ticks(M_L);
 	int16_t encoder_right = motors.get_encoder_ticks(M_R);
 
 	encoders_msg.encoder_left = encoder_left;
 	encoders_msg.encoder_right = encoder_right;
-	encoders_msg.header.stamp = nh.now();
+	//encoders_msg.header.stamp = nh.now();
 
-	encoders_pub.publish(&encoders_msg);
+	ret = rcl_publish(&encoders_pub, &encoders_msg, NULL);
 
 	int32_t right_speed = motors.get_speed(M_R);
 	int32_t left_speed = motors.get_speed(M_L);
@@ -334,26 +447,27 @@ void MotorBoard::update() {
 	odom_msg.twist.twist.angular.z = odometry->getAngularSpeed();
 	odom_pub.publish(&odom_msg);*/
 
-	odom_lighter_msg.header.stamp = nh.now();
-	odom_lighter_msg.header.seq = message_counter++;
-	odom_lighter_msg.header.frame_id = "";
-	odom_lighter_msg.poseX = X;
-	odom_lighter_msg.poseY = Y;
-	odom_lighter_msg.angleRz = current_theta_rad;
-	odom_lighter_msg.speedVx = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
-	odom_lighter_msg.speedWz = ((right_speed - left_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
-	odom_lighter_pub.publish(&odom_lighter_msg);
+	//odom_lighter_msg.header.stamp = nh.now();
+	//odom_lighter_msg.header.seq = message_counter++;
+	//odom_lighter_msg.header.frame_id = "";//Todo how to publish this?
+	odom_lighter_msg.pose_x = X;
+	odom_lighter_msg.pose_y = Y;
+	odom_lighter_msg.angle_rz = current_theta_rad;
+	odom_lighter_msg.speed_vx = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
+	odom_lighter_msg.speed_wz = ((right_speed - left_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
+	ret = rcl_publish(&odom_lighter_pub, &odom_lighter_msg, NULL);
 
 	if (false && message_counter%100 == 0)
 	{
-		odom_light_msg.header.stamp = nh.now();
-		odom_light_msg.header.seq = message_counter++;
-		odom_light_msg.header.frame_id = "odom_light_newer";
+		//odom_light_msg.header.stamp = nh.now();
+		//odom_light_msg.header.seq = message_counter++;
+		//odom_light_msg.header.frame_id = "odom_light_newer";//Todo how to publish this?
 		odom_light_msg.pose.position.x = X;
 		odom_light_msg.pose.position.y = Y;
 		odom_light_msg.pose.position.z = MotorBoard::getDCMotor().get_dt();
 
-		odom_light_msg.pose.orientation = tf::createQuaternionFromYaw(current_theta_rad);
+		odom_light_msg.pose.orientation = createQuaternionMsgFromYaw(current_theta_rad);
+
 
 		odom_light_msg.speed.linear.x = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 		odom_light_msg.speed.linear.y = ticksToMillimeters(MotorBoard::getDCMotor().get_linear_speed_order())/1000.f;
@@ -366,7 +480,10 @@ void MotorBoard::update() {
 		odom_light_msg.current_motor_right = motors.get_accumulated_current(M_R);
 
 
-		odom_light_pub.publish(&odom_light_msg);
+
+
+		ret = rcl_publish(&odom_light_pub, &odom_light_msg, NULL);
+
 
 		motors_msg.current_left = motors.get_current(M_L);
 		motors_msg.current_right = motors.get_current(M_R);
@@ -374,12 +491,12 @@ void MotorBoard::update() {
 		motors_msg.current_left_accumulated = motors.get_accumulated_current(M_L);
 		motors_msg.current_right_accumulated = motors.get_accumulated_current(M_R);
 
-		motors_pub.publish(&motors_msg);
+		ret = rcl_publish(&motors_pub, &motors_msg, NULL);
 
 
 	}
 
-	nh.spinOnce();
+	  rclc_executor_spin(&executor);
 }
 
 void setup()
