@@ -104,7 +104,7 @@ private:
 	rcl_allocator_t allocator;
 	rcl_node_t node;
 	rclc_executor_t executor;
-
+};
 
 	//TODO comprendre pourquoi ça ne marche pas
 #ifdef __cplusplus
@@ -118,6 +118,6 @@ void loop(TIM_HandleTypeDef* motorTimHandler, TIM_HandleTypeDef* loopTimHandler)
 #ifdef __cplusplus
 }
 #endif
-}
+
 
 #endif /* MAINPP_H_ */

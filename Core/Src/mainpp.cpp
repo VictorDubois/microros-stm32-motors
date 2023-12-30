@@ -7,6 +7,7 @@
 #include <mainpp.h>
 #include <constants.h>
 #include <math.h>
+
 extern "C" {
 	#include "main.h"
 }
@@ -17,23 +18,25 @@ ros::Subscriber<krabi_msgs__msg__MotorsParameters> parameters_sub("motors_parame
 ros::Subscriber<std_msgs__msg__Bool> enable_sub("enable_motor", enable_motor_cb);
 ros::Subscriber<krabi_msgs__msg__MotorsCmd> motors_cmd_sub("motors_cmd", motors_cmd_cb);*/
 
-void motors_cmd_cb(const krabi_msgs__msg__MotorsCmd &motors_cmd_msg)
+void motors_cmd_cb(const void* motors_cmd_msg_void)
 {
-	if (motors_cmd_msg.reset_encoders)
+	// Cast received message to used type
+	const krabi_msgs__msg__MotorsCmd * motors_cmd_msg = (const krabi_msgs__msg__MotorsCmd *)motors_cmd_msg_void;
+	if (motors_cmd_msg->reset_encoders)
 	{
 		MotorBoard::set_odom(0, 0, 0);
 	}
 
-	MotorBoard::getDCMotor().set_enable_motors(motors_cmd_msg.enable_motors);
+	MotorBoard::getDCMotor().set_enable_motors(motors_cmd_msg->enable_motors);
 
-	if (!motors_cmd_msg.enable_motors) {
+	if (!motors_cmd_msg->enable_motors) {
 		MotorBoard::getDCMotor().resetMotors();
 		return;
 	}
 
-	if (motors_cmd_msg.override_pwm)
+	if (motors_cmd_msg->override_pwm)
 	{
-		MotorBoard::getDCMotor().override_PWM(motors_cmd_msg.pwm_override_left, motors_cmd_msg.pwm_override_right);
+		MotorBoard::getDCMotor().override_PWM(motors_cmd_msg->pwm_override_left, motors_cmd_msg->pwm_override_right);
 	}
 	else
 	{
@@ -49,22 +52,25 @@ void set_odom_alone_cb(const krabi_msgs__srv__SetOdom_Request &req, krabi_msgs__
 
 //ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_alone_cb);
 
-void parameters_cb(const krabi_msgs__msg__MotorsParameters& a_parameters)
+void parameters_cb(const void* a_parameters_void)
 {
-	MotorBoard::getDCMotor().set_max_current(a_parameters.max_current);
-	MotorBoard::getDCMotor().set_max_current(a_parameters.max_current_left, a_parameters.max_current_right);
+	krabi_msgs__msg__MotorsParameters * a_parameters = (krabi_msgs__msg__MotorsParameters*) a_parameters_void;
+	MotorBoard::getDCMotor().set_max_current(a_parameters->max_current);
+	MotorBoard::getDCMotor().set_max_current(a_parameters->max_current_left, a_parameters->max_current_right);
 }
 
-void cmd_vel_cb(const geometry_msgs__msg__Twist& twist)
+void cmd_vel_cb(const void* twist_void)
 {
-	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, -twist.angular.z);
+	geometry_msgs__msg__Twist* twist = (geometry_msgs__msg__Twist*) twist_void;
+	MotorBoard::getDCMotor().set_speed_order(twist->linear.x, -twist->angular.z);
 	//asserv_msg.max_current_left = twist.linear.x;
 
 }
 
-void enable_motor_cb(const std_msgs__msg__Bool& enable)
+void enable_motor_cb(const void* enable_void)
 {
-	if(!enable.data) {
+	std_msgs__msg__Bool * enable = (std_msgs__msg__Bool *)enable_void;
+	if(!enable->data) {
 		MotorBoard::getDCMotor().resetMotors();
 	}
 }
@@ -76,15 +82,18 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
 }*/
-
+/*
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
+	if (htim->Instance == TIM1) {
+	    HAL_IncTick();
+	  }
 	if (htim->Instance == TIM15) {
 		MotorBoard::getDCMotor().update();
 
 	}
 	if (htim->Instance == TIM7) {
 	}
-}
+}*/
 
 //ros::NodeHandle MotorBoard::nh;
 // @todo comprendre pourquoi c'est un conflit?
@@ -508,6 +517,13 @@ void setup()
   //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);//BRAKE
   HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_RESET);//DIR_A
   HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET);//DIR_B
+
+	/*HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+	HAL_Delay(1000);
+	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+	HAL_Delay(1000);*/
+
+
 }
 
 
