@@ -104,22 +104,22 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-///* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_StartDefaultTask */
 ///**
 //  * @brief  Function implementing the defaultTask thread.
 //  * @param  argument: Not used
 //  * @retval None
 //  */
-///* USER CODE END Header_StartDefaultTask */
+/* USER CODE END Header_StartDefaultTask */
 //void StartDefaultTask(void *argument)
 //{
-//  /* USER CODE BEGIN StartDefaultTask */
-//  /* Infinite loop */
-//  for(;;)
-//  {
-//    osDelay(1);
-//  }
-//  /* USER CODE END StartDefaultTask */
+ // /* USER CODE BEGIN StartDefaultTask */
+  ///* Infinite loop */
+  //for(;;)
+ // {
+  //  osDelay(1);
+  //}
+  /* USER CODE END StartDefaultTask */
 //}
 
 /* Private application code --------------------------------------------------*/

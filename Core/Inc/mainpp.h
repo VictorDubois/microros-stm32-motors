@@ -11,7 +11,7 @@
 #include <std_msgs/msg/bool.h>
 #include <geometry_msgs/msg/twist.h>
 #include <krabi_msgs/msg/motors.h>
-#include <krabi_msgs/msg/odom_light.h>
+//#include <krabi_msgs/msg/odom_light.h>
 #include <krabi_msgs/msg/odom_lighter.h>
 #include <krabi_msgs/msg/encoders.h>
 #include <krabi_msgs/msg/motors_parameters.h>
@@ -19,7 +19,7 @@
 #include <std_msgs/msg/string.h>
 #include <nav_msgs/msg/odometry.h>
 #include <krabi_msgs/msg/motors_cmd.h>
-#include <krabi_msgs/srv/set_odom.h>
+//#include <krabi_msgs/srv/set_odom.h>
 #include <MCP3002.h>
 #include "stm32f3xx_hal.h"
 #include "DCMotor.h"
@@ -68,7 +68,7 @@ public:
 	static rcl_node_t& getNodeHandle(void);
 	static DCMotor& getDCMotor(void);
 	static void set_odom(float a_x, float a_y, float a_theta);
-	void set_odom_cb(const krabi_msgs__srv__SetOdom_Request& req, krabi_msgs__srv__SetOdom_Response &res);
+	//void set_odom_cb(const krabi_msgs__srv__SetOdom_Request& req, krabi_msgs__srv__SetOdom_Response &res);
 
 	void update();
 	void update_inputs();
@@ -89,14 +89,14 @@ private:
 
 	rcl_publisher_t encoders_pub;
 	rcl_publisher_t motors_pub;
-	rcl_publisher_t odom_light_pub;
+	//rcl_publisher_t odom_light_pub;
 	rcl_publisher_t odom_lighter_pub;
-	rcl_publisher_t asserv_pub;
+	//rcl_publisher_t asserv_pub;
 
 	krabi_msgs__msg__Encoders encoders_msg;
 	krabi_msgs__msg__Motors motors_msg;
-	krabi_msgs__msg__MotorsParameters asserv_msg;
-	krabi_msgs__msg__OdomLight odom_light_msg;
+	//krabi_msgs__msg__MotorsParameters asserv_msg;
+	//krabi_msgs__msg__OdomLight odom_light_msg;
 	krabi_msgs__msg__OdomLighter odom_lighter_msg;
 
 	rcl_publisher_t publisher;

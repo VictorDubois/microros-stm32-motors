@@ -44,11 +44,11 @@ void motors_cmd_cb(const void* motors_cmd_msg_void)
 	}
 }
 
-void set_odom_alone_cb(const krabi_msgs__srv__SetOdom_Request &req, krabi_msgs__srv__SetOdom_Response &res)
+/*void set_odom_alone_cb(const krabi_msgs__srv__SetOdom_Request &req, krabi_msgs__srv__SetOdom_Response &res)
 {
 	MotorBoard::set_odom(req.x, req.y, req.theta);
 	res.success = true;
-}
+}*/
 
 //ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_alone_cb);
 
@@ -83,7 +83,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
 }*/
 /*
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
+//void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 	if (htim->Instance == TIM1) {
 	    HAL_IncTick();
 	  }
@@ -160,21 +160,21 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler)//:Node("STM32")
 			&node,
 			ROSIDL_GET_MSG_TYPE_SUPPORT(krabi_msgs, msg, Motors),
 			"motors");
-	rclc_publisher_init_default(
+	/*rclc_publisher_init_default(
 			&odom_light_pub,
 			&node,
 			ROSIDL_GET_MSG_TYPE_SUPPORT(krabi_msgs, msg, OdomLight),
-			"odom_light");
+			"odom_light");*/
 	rclc_publisher_init_default(
 			&odom_lighter_pub,
 			&node,
 			ROSIDL_GET_MSG_TYPE_SUPPORT(krabi_msgs, msg, OdomLighter),
 			"odom_lighter");
-	rclc_publisher_init_default(
+	/*rclc_publisher_init_default(
 				&asserv_pub,
 				&node,
 				ROSIDL_GET_MSG_TYPE_SUPPORT(krabi_msgs, msg, MotorsParameters),
-				"asserv");
+				"asserv");*/
 
 	rcl_ret_t rc;
 	rcl_subscription_t twist_sub;
@@ -217,10 +217,10 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler)//:Node("STM32")
 
 
 	// Services
-	rcl_service_t set_odom_srv;
+	/*rcl_service_t set_odom_srv;
 	rc = rclc_service_init_default(
 	  &set_odom_srv, &node,
-	  ROSIDL_GET_SRV_TYPE_SUPPORT(krabi_msgs, srv, SetOdom), "set_odom");
+	  ROSIDL_GET_SRV_TYPE_SUPPORT(krabi_msgs, srv, SetOdom), "set_odom");*/
 
 	/*ros::Subscriber<geometry_msgs__msg__Twist> twist_sub("cmd_vel", cmd_vel_cb);
 	ros::Subscriber<krabi_msgs__msg__MotorsParameters> parameters_sub("motors_parameters", parameters_cb);
@@ -466,7 +466,7 @@ void MotorBoard::update() {
 	odom_lighter_msg.speed_wz = ((right_speed - left_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
 	ret = rcl_publish(&odom_lighter_pub, &odom_lighter_msg, NULL);
 
-	if (false && message_counter%100 == 0)
+	/*if (false && message_counter%100 == 0)
 	{
 		//odom_light_msg.header.stamp = nh.now();
 		//odom_light_msg.header.seq = message_counter++;
@@ -503,7 +503,7 @@ void MotorBoard::update() {
 		ret = rcl_publish(&motors_pub, &motors_msg, NULL);
 
 
-	}
+	}*/
 
 	  rclc_executor_spin(&executor);
 }

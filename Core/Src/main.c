@@ -34,6 +34,7 @@
 #include <rmw_microros/rmw_microros.h>
 
 #include <std_msgs/msg/int32.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -101,6 +102,8 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -116,7 +119,10 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+	  HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+	    	HAL_Delay(200);
+	    	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+	    	HAL_Delay(300);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -185,6 +191,10 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
 
+	setup();
+	loop(&htim3, &htim15);
+
+
   // micro-ROS configuration
 
   rmw_uros_set_custom_transport(
@@ -201,7 +211,21 @@ void StartDefaultTask(void *argument)
   freeRTOS_allocator.reallocate = microros_reallocate;
   freeRTOS_allocator.zero_allocate =  microros_zero_allocate;
 
+
   if (!rcutils_set_default_allocator(&freeRTOS_allocator)) {
+	  // Fails => probably because lack of RAM?
+	  // Todo: regenerate with less pub/sub/history
+	  // Then with no server
+	  // Last resort: try to use CCMRAM??
+      HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+      while(true)
+      {
+      HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+      	HAL_Delay(1000);
+      	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+      	HAL_Delay(1000);
+      }
+
       printf("Error on default allocators (line %d)\n", __LINE__);
   }
 
@@ -216,27 +240,75 @@ void StartDefaultTask(void *argument)
   allocator = rcl_get_default_allocator();
 
   //create init_options
-  rclc_support_init(&support, 0, NULL, &allocator);
-
+  rcl_ret_t ret = RCL_RET_OK;
+  //rcl_ret_t ret =
+		  rclc_support_init(&support, 0, NULL, &allocator);//@todo comprendre pourquoi ça fail
+  if (ret != RCL_RET_OK)
+  {
+	  HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+	  while(true)
+	        {
+	        HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+	        	HAL_Delay(2000);
+	        	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+	        	HAL_Delay(500);
+	        }
+	//printf("Error publishing (line %d)\n", __LINE__);
+  }
   // create node
-  rclc_node_init_default(&node, "cubemx_node", "", &support);
-
+  //ret =
+		  rclc_node_init_default(&node, "cubemx_node", "", &support);
+  if (ret != RCL_RET_OK)
+  {
+	  HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+	  while(true)
+	        {
+	        HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+	        	HAL_Delay(100);
+	        	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+	        	HAL_Delay(1000);
+	        }
+	//printf("Error publishing (line %d)\n", __LINE__);
+  }
   // create publisher
-  rclc_publisher_init_default(
+  ret = rclc_publisher_init_default(
     &publisher,
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
     "cubemx_publisher");
+  if (ret != RCL_RET_OK)
+  {
+	  HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+	  while(true)
+	        {
+	        HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+	        	HAL_Delay(1000);
+	        	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+	        	HAL_Delay(100);
+	        }
+	//printf("Error publishing (line %d)\n", __LINE__);
+  }
 
   msg.data = 0;
+  //
 
   for(;;)
   {
-    rcl_ret_t ret = rcl_publish(&publisher, &msg, NULL);
+    ret = rcl_publish(&publisher, &msg, NULL);
     if (ret != RCL_RET_OK)
     {
+    	while(true)
+    	      {
+    	      HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+    	      	HAL_Delay(100);
+    	      	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+    	      	HAL_Delay(100);
+    	      }
+    	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
       printf("Error publishing (line %d)\n", __LINE__);
     }
+
+    HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 
     msg.data++;
     osDelay(10);
@@ -263,6 +335,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
   /* USER CODE END Callback 1 */
 }
+
 
 /**
   * @brief  This function is executed in case of error occurrence.
