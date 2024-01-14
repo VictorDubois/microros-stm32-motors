@@ -11,6 +11,8 @@
 extern "C" {
 	#include "main.h"
 }
+
+
 //#include <tf/tf.h>
 
 /*ros::Subscriber<geometry_msgs__msg__Twist> twist_sub("cmd_vel", cmd_vel_cb);
@@ -126,6 +128,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler)//:Node("STM32")
 		HAL_Delay(100);
 	}
 
+
 	HAL_Delay(1);//3000, 4000, 5000 works
 	//1, 500, 2000 does not work
 
@@ -141,13 +144,62 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler)//:Node("STM32")
 
 
 
-    allocator = rcl_get_default_allocator();
+	  // micro-ROS app
+
+	  rcl_publisher_t publisher;
+	  //std_msgs__msg__Int32 msg;
+	  rclc_support_t support;
+	  rcl_allocator_t allocator;
+	  rcl_node_t node;
+
+	  allocator = rcl_get_default_allocator();
+
+	  //create init_options
+	  rcl_ret_t ret = RCL_RET_OK;
+	  //rcl_ret_t ret =
+			  rclc_support_init(&support, 0, NULL, &allocator);//@todo comprendre pourquoi ça fail
+	  if (ret != RCL_RET_OK)
+	  {
+		  HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+		  while(true)
+		        {
+		        HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+		        	HAL_Delay(2000);
+		        	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+		        	HAL_Delay(500);
+		        }
+		//printf("Error publishing (line %d)\n", __LINE__);
+	  }
+	  // create node
+	  //ret =
+			  rclc_node_init_default(&node, "cubemx_node", "", &support);
+	  if (ret != RCL_RET_OK)
+	  {
+		  HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+		  while(true)
+		        {
+		        HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+		        	HAL_Delay(100);
+		        	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+		        	HAL_Delay(1000);
+		        }
+		//printf("Error publishing (line %d)\n", __LINE__);
+	  }
+
+		executor = rclc_executor_get_zero_initialized_executor();
+
+		// total number of handles = #subscriptions + #timers
+		unsigned int num_handles = 4 + 0;
+		rclc_executor_init(&executor, &support.context, num_handles, &allocator);
+
+
+    /*allocator = rcl_get_default_allocator();
 
     //create init_options
     rclc_support_init(&support, 0, NULL, &allocator);
 
     // create node
-    rclc_node_init_default(&node, "cubemx_node", "", &support);
+    rclc_node_init_default(&node, "cubemx_node", "", &support);*/
 
 
 	rclc_publisher_init_default(
@@ -202,6 +254,13 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler)//:Node("STM32")
 	std_msgs__msg__Bool enable_msg;
 	krabi_msgs__msg__MotorsCmd motors_cmd_msg;
 
+	encoders_msg.header.frame_id.data = (char *) malloc(sizeof(char)*10);
+	encoders_msg.header.frame_id.size = 0;
+	encoders_msg.header.frame_id.capacity = 10;
+	odom_lighter_msg.header.frame_id.data = (char *) malloc(sizeof(char)*10);
+	odom_lighter_msg.header.frame_id.size = 0;
+	odom_lighter_msg.header.frame_id.capacity = 10;
+
 	rc = rclc_executor_add_subscription(
 	  &executor, &twist_sub, &twist_msg,
 	  &cmd_vel_cb, ON_NEW_DATA);
@@ -244,6 +303,8 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler)//:Node("STM32")
 	nh.advertiseService(set_odom_srv);*/
 
 	HAL_Delay(100);
+
+	rclc_executor_spin_some(&executor, 10000000);
 
 
 	// Check connection before continuing
@@ -369,7 +430,8 @@ float MotorBoard::compute_linear_dist(const long encoder1, const long encoder2)
 
 void MotorBoard::update_inputs() {
 	//nh.spinOnce();
-	rclc_executor_spin(&executor);
+	rclc_executor_spin_some(&executor, 10000000);
+	//rclc_executor_spin(&executor);
 }
 
 geometry_msgs__msg__Quaternion createQuaternionMsgFromYaw(double yaw)
@@ -397,6 +459,7 @@ void MotorBoard::update() {
 	encoders_msg.encoder_left = encoder_left;
 	encoders_msg.encoder_right = encoder_right;
 	//encoders_msg.header.stamp = nh.now();
+	//encoders_msg.header.frame_id = std::string("");
 
 	ret = rcl_publish(&encoders_pub, &encoders_msg, NULL);
 
@@ -459,6 +522,8 @@ void MotorBoard::update() {
 	//odom_lighter_msg.header.stamp = nh.now();
 	//odom_lighter_msg.header.seq = message_counter++;
 	//odom_lighter_msg.header.frame_id = "";//Todo how to publish this?
+
+	//odom_lighter_msg.header.frame_id.rosidl_runtime_c__String.data = "";
 	odom_lighter_msg.pose_x = X;
 	odom_lighter_msg.pose_y = Y;
 	odom_lighter_msg.angle_rz = current_theta_rad;
@@ -505,7 +570,8 @@ void MotorBoard::update() {
 
 	}*/
 
-	  rclc_executor_spin(&executor);
+	  //rclc_executor_spin(&executor);
+	  rclc_executor_spin_some(&executor, 10000000);
 }
 
 void setup()

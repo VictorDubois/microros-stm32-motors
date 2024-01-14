@@ -201,7 +201,6 @@ void StartDefaultTask(void *argument)
 {
 
 	setup();
-	loop(&htim3, &htim15);
 
 
   // micro-ROS configuration
@@ -213,6 +212,8 @@ void StartDefaultTask(void *argument)
     cubemx_transport_close,
     cubemx_transport_write,
     cubemx_transport_read);
+
+
 
   rcl_allocator_t freeRTOS_allocator = rcutils_get_zero_initialized_allocator();
   freeRTOS_allocator.allocate = microros_allocate;
@@ -237,6 +238,7 @@ void StartDefaultTask(void *argument)
 
       printf("Error on default allocators (line %d)\n", __LINE__);
   }
+	loop(&htim3, &htim15);
 
   // micro-ROS app
 
@@ -357,6 +359,10 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+    HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+    HAL_Delay(100);
+    HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+    HAL_Delay(100);
   }
   /* USER CODE END Error_Handler_Debug */
 }
