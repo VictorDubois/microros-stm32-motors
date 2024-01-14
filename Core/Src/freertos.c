@@ -111,16 +111,15 @@ void MX_FREERTOS_Init(void) {
 //  * @retval None
 //  */
 /* USER CODE END Header_StartDefaultTask */
-//void StartDefaultTask(void *argument)
-//{
- // /* USER CODE BEGIN StartDefaultTask */
+
+  /* USER CODE BEGIN StartDefaultTask */
   ///* Infinite loop */
   //for(;;)
  // {
   //  osDelay(1);
   //}
   /* USER CODE END StartDefaultTask */
-//}
+
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
