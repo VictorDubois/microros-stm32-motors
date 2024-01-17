@@ -7,6 +7,7 @@
 #include <mainpp.h>
 #include <constants.h>
 #include <math.h>
+#include <rmw_microros/rmw_microros.h>
 
 extern "C" {
 	#include "main.h"
@@ -84,8 +85,8 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
 }*/
-/*
-//void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
+
+/*void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 	if (htim->Instance == TIM1) {
 	    HAL_IncTick();
 	  }
@@ -97,8 +98,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	}
 }*/
 
+void update_motor_board()
+{
+    HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+
+	MotorBoard::getDCMotor().update();
+    HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+
+}
+
 //ros::NodeHandle MotorBoard::nh;
-// @todo comprendre pourquoi c'est un conflit?
 DCMotorHardware MotorBoard::motorsHardware;
 DCMotor MotorBoard::motors;
 MCP3002 MotorBoard::currentReader;
@@ -152,12 +161,21 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler)//:Node("STM32")
 	  rcl_allocator_t allocator;
 	  rcl_node_t node;
 
+	  /*while(rmw_uros_ping_agent(100, 1) != RMW_RET_OK)
+	    		{
+	    			HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+	    			HAL_Delay(100);
+	    			HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+	    			HAL_Delay(300);
+
+	    			}*/
+
 	  allocator = rcl_get_default_allocator();
 
 	  //create init_options
 	  rcl_ret_t ret = RCL_RET_OK;
 	  //rcl_ret_t ret =
-			  rclc_support_init(&support, 0, NULL, &allocator);//@todo comprendre pourquoi ça fail
+			  rclc_support_init(&support, 0, NULL, &allocator);
 	  if (ret != RCL_RET_OK)
 	  {
 		  HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
@@ -201,7 +219,14 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler)//:Node("STM32")
     // create node
     rclc_node_init_default(&node, "cubemx_node", "", &support);*/
 
+		/*while(rmw_uros_ping_agent(1, 1) != RMW_RET_OK)
+		{
+			HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+			HAL_Delay(100);
+			HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+			HAL_Delay(300);
 
+			}*/
 	rclc_publisher_init_default(
 		&encoders_pub,
 		&node,
@@ -254,12 +279,20 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler)//:Node("STM32")
 	std_msgs__msg__Bool enable_msg;
 	krabi_msgs__msg__MotorsCmd motors_cmd_msg;
 
-	encoders_msg.header.frame_id.data = (char *) malloc(sizeof(char)*10);
+	/*encoders_msg.header.frame_id.data = (char *) malloc(sizeof(char)*10);
 	encoders_msg.header.frame_id.size = 0;
 	encoders_msg.header.frame_id.capacity = 10;
 	odom_lighter_msg.header.frame_id.data = (char *) malloc(sizeof(char)*10);
 	odom_lighter_msg.header.frame_id.size = 0;
-	odom_lighter_msg.header.frame_id.capacity = 10;
+	odom_lighter_msg.header.frame_id.capacity = 10;*/
+
+	encoders_msg.header.frame_id.data = "";
+	encoders_msg.header.frame_id.size = strlen(encoders_msg.header.frame_id.data);
+	encoders_msg.header.frame_id.capacity = encoders_msg.header.frame_id.size + 1;
+
+	odom_lighter_msg.header.frame_id.data = "";
+	odom_lighter_msg.header.frame_id.size = strlen(odom_lighter_msg.header.frame_id.data);
+	odom_lighter_msg.header.frame_id.capacity = odom_lighter_msg.header.frame_id.size + 1;
 
 	rc = rclc_executor_add_subscription(
 	  &executor, &twist_sub, &twist_msg,
@@ -304,7 +337,16 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler)//:Node("STM32")
 
 	HAL_Delay(100);
 
-	rclc_executor_spin_some(&executor, 10000000);
+	rclc_executor_spin_some(&executor, 1000000);
+
+	while(rmw_uros_ping_agent(10, 10) != RMW_RET_OK)
+			{
+				HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+				HAL_Delay(100);
+				HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+				HAL_Delay(300);
+
+				}
 
 
 	// Check connection before continuing
@@ -445,10 +487,13 @@ geometry_msgs__msg__Quaternion createQuaternionMsgFromYaw(double yaw)
 }
 
 void MotorBoard::update() {
-	// Todo check if connected
-	/*if (!node.connected()){
+	/*rmw_uros_discover_agent(rmw_options)
+	rmw_uros_ping_agent(timeout_ms, attempts)*/
+
+	if (rmw_uros_ping_agent(1, 1) != RMW_RET_OK){
+		HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 		return;
-	}*/
+	}
 
 	rcl_ret_t ret;
 
@@ -457,7 +502,7 @@ void MotorBoard::update() {
 	int16_t encoder_right = motors.get_encoder_ticks(M_R);
 
 	encoders_msg.encoder_left = encoder_left;
-	encoders_msg.encoder_right = encoder_right;
+	encoders_msg.encoder_right = toto++;//encoder_right;
 	//encoders_msg.header.stamp = nh.now();
 	//encoders_msg.header.frame_id = std::string("");
 
@@ -571,7 +616,7 @@ void MotorBoard::update() {
 	}*/
 
 	  //rclc_executor_spin(&executor);
-	  rclc_executor_spin_some(&executor, 10000000);
+	  rclc_executor_spin_some(&executor, 1000000);
 }
 
 void setup()
@@ -618,9 +663,10 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 
 			asserv_pub.publish(&asserv_msg);*/
 
-
-
 			HAL_Delay(waiting_time);
+
+
 		}
+
 	}
 }

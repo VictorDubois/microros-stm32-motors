@@ -240,6 +240,8 @@ void StartDefaultTask(void *argument)
   }
 	loop(&htim3, &htim15);
 
+
+	// Never called!
   // micro-ROS app
 
   rcl_publisher_t publisher;
@@ -247,6 +249,15 @@ void StartDefaultTask(void *argument)
   rclc_support_t support;
   rcl_allocator_t allocator;
   rcl_node_t node;
+
+  while(rmw_uros_ping_agent(100, 1) != RMW_RET_OK)
+  		{
+  			HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+  			HAL_Delay(100);
+  			HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
+  			HAL_Delay(300);
+
+  			}
 
   allocator = rcl_get_default_allocator();
 
@@ -344,6 +355,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
+  if (htim->Instance == TIM15) {
+
+	  update_motor_board();
+
+
+  	}
 
   /* USER CODE END Callback 1 */
 }

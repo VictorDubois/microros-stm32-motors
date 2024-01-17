@@ -77,6 +77,8 @@ private:
 	static DCMotorHardware motorsHardware;
 	static DCMotor motors;
 	static MCP3002 currentReader;
+
+	long toto = 0;
 	volatile long last_encoder_left = 0;
 	volatile long last_encoder_right = 0;
 	volatile int32_t last_encoder_left_angular = 0;
@@ -106,14 +108,14 @@ private:
 	rclc_executor_t executor;
 };
 
-	//TODO comprendre pourquoi ça ne marche pas
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 
-void setup();
+ void setup();
 void loop(TIM_HandleTypeDef* motorTimHandler, TIM_HandleTypeDef* loopTimHandler);
+void update_motor_board();
 
 #ifdef __cplusplus
 }
