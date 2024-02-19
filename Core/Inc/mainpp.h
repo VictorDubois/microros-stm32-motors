@@ -58,12 +58,22 @@ void cmd_vel_cb(const geometry_msgs__msg__Twist& twist);
 void parameters_cb(const krabi_msgs__msg__MotorsParameters& parameters);
 void enable_motor_cb(const std_msgs__msg__Bool& enable);
 
+void * custom_allocate(size_t size, void * state);
+
+void custom_deallocate(void * pointer, void * state);
+
+void * custom_reallocate(void * pointer, size_t size, void * state);
+
+void * custom_zero_allocate(size_t number_of_elements, size_t size_of_element, void * state);
+
 class MotorBoard //: public rclcpp::Node
 {
 public:
 	MotorBoard(TIM_HandleTypeDef* motorTimHandler);
 	MotorBoard();
 	~MotorBoard();
+
+	static MotorBoard* getMotorBoard();
 
 	static rcl_node_t& getNodeHandle(void);
 	static DCMotor& getDCMotor(void);
@@ -73,6 +83,13 @@ public:
 	void update();
 	void update_inputs();
 private:
+	static MotorBoard* instance;
+	float compute_linear_dist(const long encoder_left, const long encoder_right);
+	bool create_entities();
+	void destroy_entities();
+
+
+
 	//static ros::NodeHandle nh;
 	static DCMotorHardware motorsHardware;
 	static DCMotor motors;
@@ -83,7 +100,8 @@ private:
 	volatile long last_encoder_right = 0;
 	volatile int32_t last_encoder_left_angular = 0;
 	volatile int32_t last_encoder_right_angular = 0;
-	float compute_linear_dist(const long encoder_left, const long encoder_right);
+
+
 	static float X;
 	static float Y;
 	static float theta_offset;
@@ -106,6 +124,7 @@ private:
 	rcl_allocator_t allocator;
 	rcl_node_t node;
 	rclc_executor_t executor;
+	rcl_timer_t timer;
 };
 
 #ifdef __cplusplus

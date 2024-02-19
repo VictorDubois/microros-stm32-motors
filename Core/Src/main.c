@@ -196,11 +196,19 @@ void microros_deallocate(void * pointer, void * state);
 void * microros_reallocate(void * pointer, size_t size, void * state);
 void * microros_zero_allocate(size_t number_of_elements, size_t size_of_element, void * state);
 
+rcl_ret_t check_ret(rcl_ret_t ret)
+{
+	if (ret != RCL_RET_OK)
+	{
+		volatile int toto = 2;
+	}
+	return ret;
+}
 
 void StartDefaultTask(void *argument)
 {
 
-	setup();
+
 
 
   // micro-ROS configuration
@@ -213,6 +221,25 @@ void StartDefaultTask(void *argument)
     cubemx_transport_write,
     cubemx_transport_read);
 
+	rcl_publisher_t publisher;
+	rclc_support_t support;
+	rcl_allocator_t allocator;
+	rcl_node_t node;
+	rclc_executor_t executor;
+	rcl_timer_t timer;
+
+  //check_ret(rcutils_set_default_allocator(&toto_allocator));
+
+
+
+
+  /*rcl_allocator_t allocator = rcutils_get_zero_initialized_allocator();
+  allocator.allocate = custom_allocate;
+  allocator.deallocate = custom_deallocate;
+  allocator.reallocate = custom_reallocate;
+  allocator.zero_allocate = custom_zero_allocate;*/
+
+
 
 
   rcl_allocator_t freeRTOS_allocator = rcutils_get_zero_initialized_allocator();
@@ -222,7 +249,21 @@ void StartDefaultTask(void *argument)
   freeRTOS_allocator.zero_allocate =  microros_zero_allocate;
 
 
-  if (!rcutils_set_default_allocator(&freeRTOS_allocator)) {
+
+    	check_ret(rcutils_set_default_allocator(&freeRTOS_allocator));
+
+    	 temp =uxTaskGetStackHighWaterMark(NULL);
+    	    temp = uxTaskGetStackSize(NULL);
+    	allocator = rcl_get_default_allocator();
+
+    	temp =uxTaskGetStackHighWaterMark(NULL);
+    	    temp = uxTaskGetStackSize(NULL);
+    	    	//create init_options
+    	    	//rcl_ret_t ret = RCL_RET_OK;
+    	    	volatile rcl_ret_t ret =
+    	    			check_ret(rclc_support_init(&support, 0, NULL, &allocator));
+
+  /*if(!rcutils_set_default_allocator(&allocator)){
 	  // Fails => probably because lack of RAM?
 	  // Todo: regenerate with less pub/sub/history
 	  // Then with no server
@@ -237,10 +278,11 @@ void StartDefaultTask(void *argument)
       }
 
       printf("Error on default allocators (line %d)\n", __LINE__);
-  }
+  }*/
+  setup();
 	loop(&htim3, &htim15);
 
-
+/*
 	// Never called!
   // micro-ROS app
 
@@ -334,7 +376,7 @@ void StartDefaultTask(void *argument)
 
     msg.data++;
     osDelay(10);
-  }
+  }*/
 }
 /* USER CODE END 4 */
 
